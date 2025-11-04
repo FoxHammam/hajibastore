@@ -1,0 +1,65 @@
+/* Admin Dashboard Styles based on AdminDasboard.json */
+
+/* Global Admin Styles */
+.admin-sidebar-item {
+  transition: all 0.2s ease;
+}
+
+.admin-sidebar-item:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #FFFFFF !important;
+}
+
+/* Scrollbar Styling for Sidebar */
+.admin-sidebar nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-sidebar nav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-sidebar nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.admin-sidebar nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Table Row Hover Effect */
+tbody tr:hover {
+  background-color: #F4F7F9;
+}
+
+/* Button Hover Effects */
+button:hover {
+  opacity: 0.9;
+}
+
+/* Card Hover Effect */
+.admin-card {
+  transition: box-shadow 0.2s ease;
+}
+
+.admin-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* KPI Widget Hover Effect */
+.kpi-widget {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Loading Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
