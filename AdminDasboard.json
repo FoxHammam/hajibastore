@@ -1,0 +1,146 @@
+{
+    "project_name": "E-commerce Admin Dashboard",
+    "style_framework": "Tailwind CSS",
+    "custom_tailwind_config": {
+      "darkMode": "class",
+      "theme": {
+        "extend": {
+          "colors": {
+            "primary": "#135bec",
+            "background-light": "#f6f6f8",
+            "background-dark": "#101622",
+            "card-light": "#ffffff",
+            "card-dark": "#1b2537",
+            "text-light-primary": "#111318",
+            "text-dark-primary": "#ffffff",
+            "text-light-secondary": "#616f89",
+            "text-dark-secondary": "#a0aec0",
+            "border-light": "#e2e8f0",
+            "border-dark": "#334155"
+          },
+          "fontFamily": {
+            "display": ["Inter", "sans-serif"]
+          },
+          "borderRadius": {
+            "DEFAULT": "0.5rem",
+            "lg": "0.75rem",
+            "xl": "1rem",
+            "full": "9999px"
+          }
+        }
+      }
+    },
+    "layout_and_content_structure": {
+      "overall_layout": "Fixed Sidebar (w-64) + Main Content Area (flex-1)",
+      "sidebar": {
+        "title": "Zenith",
+        "navigation_links": [
+          {"name": "Dashboard", "icon": "dashboard"},
+          {"name": "Orders", "icon": "shopping_cart"},
+          {"name": "Products", "icon": "inventory_2"},
+          {"name": "Customers", "icon": "group"},
+          {"name": "Messages", "icon": "mail", "badge": "3"},
+          {"name": "Analytics", "icon": "show_chart"},
+          {"name": "Marketing", "icon": "campaign"},
+          {"name": "Settings", "icon": "settings"}
+        ],
+        "footer_item": {"name": "Logout", "icon": "logout"}
+      },
+      "header": {
+        "components": [
+          "Contextual Search Bar",
+          "Notifications Icon",
+          "User Profile (Alex Turner, Admin)"
+        ]
+      },
+      "pages": [
+        {
+          "page_name": "Dashboard",
+          "reference_file": "code.html",
+          "subtitle": "Welcome back, Alex! Here's what's happening with your store today.",
+          "content_structure": {
+            "kpi_cards": "4-column grid with icon/color-coded trend indicators (e.g., Total Sales).",
+            "charts_and_lists_layout": "A grid with a dominant 2/3 Line Chart ('Daily Sales Trends') and 1/3 List ('Top Selling Products'), followed by a full-width 'Recent Orders' table."
+          }
+        },
+        {
+          "page_name": "Orders",
+          "reference_file": "code3.html",
+          "subtitle": "Manage and track all customer orders.",
+          "action_bar": {
+            "components": ["Search Input", "Filter by Status Dropdown", "Filter by Date Dropdown", "Export Button (Primary style)"]
+          },
+          "main_component": {
+            "type": "Data Table with Filters and Pagination",
+            "columns": ["Checkbox", "Order ID", "Customer", "Date", "Total", "Status", "Actions"],
+            "status_tags": [
+              {"label": "Shipped", "color": "Green"},
+              {"label": "Pending", "color": "Yellow"},
+              {"label": "Cancelled", "color": "Red"}
+            ],
+            "pagination": "Simple numbered pagination."
+          }
+        },
+        {
+          "page_name": "Products",
+          "reference_file": "code2.html",
+          "subtitle": "Manage your product catalog, add new items, and update inventory.",
+          "action_bar": {
+            "components": ["Search Input", "Filters Button", "Bulk Actions Dropdown", "Add Product Button (Primary style)"]
+          },
+          "main_component": {
+            "type": "Product Data Table with Pagination",
+            "columns": ["Checkbox", "Product (Image & Name)", "Category", "Stock", "Price", "Status", "Actions"],
+            "key_visuals": ["Low/Out of Stock highlighted in red text.", "Product image is displayed.", "Edit/Delete action buttons."],
+            "status_tags": [
+              {"label": "Active", "color": "Green"},
+              {"label": "Draft", "color": "Yellow"}
+            ],
+            "pagination": "Standard numbered pagination."
+          }
+        },
+        {
+          "page_name": "Customers",
+          "reference_file": "code1.html",
+          "subtitle": "View and manage your registered customer base.",
+          "action_bar": {
+            "components": ["Search Input (placeholder: Search customers...)", "Filter Button", "Add Customer Button (Primary style)"]
+          },
+          "main_component": {
+            "type": "Customer Data Table with Pagination",
+            "columns": ["Checkbox", "Customer (Avatar & Name)", "Email", "Last Order", "Total Spent", "Status", "Actions"],
+            "status_tags": [
+              {"label": "Active", "color": "Green"},
+              {"label": "Inactive", "color": "Red"}
+            ],
+            "key_visuals": [
+              "Customer avatar shown next to name.",
+              "Total Spent is formatted as currency."
+            ],
+            "pagination": "Showing 1 to 7 of 124 customers with standard numbered pagination."
+          }
+        },
+        {
+          "page_name": "Messages",
+          "reference_file": "code5.html",
+          "subtitle": "Manage and respond to customer inquiries.",
+          "main_component": {
+            "type": "Inbox-style List with Tabs",
+            "tabs": ["All (25)", "Unread (3)", "Replied (10)", "Archived (12)"],
+            "list_structure": "Table rows styled to indicate **unread status** (bold text, primary color dot) vs. read status, with action buttons (Reply, Archive) on hover."
+          }
+        },
+        {
+          "page_name": "Settings",
+          "reference_files": ["4.html", "code4.html"],
+          "subtitle": "Manage your account, store details, and security preferences.",
+          "layout": "Two-column layout (1/4 vertical navigation, 3/4 content area)",
+          "content_structure": {
+            "vertical_tabs": ["Profile", "Store", "Security", "Notifications"],
+            "form_fields": "Standard text inputs, password fields, and a Primary-colored **Toggle Switch** for 'Maintenance Mode'.",
+            "footer_actions": "Cancel Button and Save Changes Button (Primary style)."
+          }
+        }
+      ]
+    }
+  }

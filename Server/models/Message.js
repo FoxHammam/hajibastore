@@ -9,11 +9,15 @@ const messageSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
+    trim: true,
+    lowercase: true
+  },
+  phone: {
+    type: String,
     trim: true
   },
   subject: {
     type: String,
-    required: true,
     trim: true
   },
   message: {
@@ -21,14 +25,14 @@ const messageSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  images: {
-    type: [String],
-    default: []
-  },
   status: {
     type: String,
     enum: ['unread', 'read', 'replied', 'archived'],
     default: 'unread'
+  },
+  read: {
+    type: Boolean,
+    default: false
   },
   adminNotes: {
     type: String,

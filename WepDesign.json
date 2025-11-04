@@ -1,0 +1,215 @@
+{
+    "themeName": "Ayoub Store Style Guide",
+    "description": "A comprehensive JSON object detailing the color palette, typography, layout, and component styles for the entire Ayoub Store website. This is designed for AI interpretation to generate a similar webpage.",
+    "colors": {
+    "primary": "#4ade80",
+    "accent": "#dcfce7",
+    "background_light": "#f3f4f6",
+    "card_background": "#ffffff",
+    "text_dark": "#1f2937",
+    "text_medium": "#4b5563",
+    "text_light": "#9ca3af",
+    "border_light": "#e5e7eb",
+    "footer_background": "#1f2937"
+    },
+    "typography": {
+    "fontFamily": "Inter, sans-serif",
+    "headings": {
+    "pageTitle": {
+    "size": "2.5rem",
+    "weight": "bold",
+    "color": "colors.text_dark"
+    },
+    "sectionTitle": {
+    "size": "1.5rem",
+    "weight": "semibold",
+    "color": "colors.text_dark"
+    }
+    },
+    "body": {
+    "size": "1rem",
+    "weight": "normal",
+    "color": "colors.text_medium",
+    "lineHeight": "1.5"
+    }
+    },
+    "components": {
+    "button": {
+    "primary": {
+    "backgroundColor": "colors.primary",
+    "textColor": "#fff",
+    "borderRadius": "0.5rem",
+    "padding": "0.75rem 1.5rem",
+    "shadow": "lg"
+    },
+    "secondary": {
+    "backgroundColor": "transparent",
+    "textColor": "colors.primary",
+    "borderColor": "colors.primary",
+    "borderWidth": "1px",
+    "borderRadius": "0.5rem",
+    "padding": "0.75rem 1.5rem"
+    }
+    },
+    "card": {
+    "backgroundColor": "colors.card_background",
+    "borderRadius": "0.75rem",
+    "boxShadow": "md",
+    "padding": "1.5rem",
+    "borderColor": "colors.border_light"
+    },
+    "section": {
+    "paddingY": "3rem",
+    "gap": "2rem"
+    },
+    "footer": {
+    "backgroundColor": "colors.footer_background",
+    "textColor": "colors.text_light",
+    "padding": "3rem"
+    },
+    "mobileMenu": {
+    "backgroundColor": "colors.card_background",
+    "textColor": "colors.text_dark",
+    "linkStyle": {
+    "padding": "1rem",
+    "iconGap": "1rem",
+    "textSize": "1.25rem",
+    "iconSize": "1.5rem"
+    },
+    "loginButton": "components.button.primary",
+    "signupButton": "components.button.secondary"
+    },
+    "filterSidebar": {
+    "backgroundColor": "colors.card_background",
+    "borderRadius": "0.75rem",
+    "boxShadow": "md",
+    "padding": "1.5rem",
+    "titleStyle": {
+    "size": "1.25rem",
+    "weight": "bold",
+    "color": "colors.text_dark"
+    },
+    "itemStyle": {
+    "paddingY": "0.5rem",
+    "textSize": "1rem",
+    "textColor": "colors.text_medium",
+    "countColor": "colors.text_light",
+    "activeTextColor": "colors.primary",
+    "countBackgroundColor": "colors.background_light",
+    "countBorderRadius": "full",
+    "countPaddingX": "0.5rem"
+    }
+    },
+    "productDetail": {
+    "priceStyle": {
+    "size": "2rem",
+    "weight": "bold",
+    "color": "colors.text_dark"
+    },
+    "quantitySelector": {
+    "backgroundColor": "colors.background_light",
+    "borderRadius": "0.5rem",
+    "borderColor": "colors.border_light",
+    "borderWidth": "1px",
+    "padding": "0.5rem"
+    },
+    "reviews": {
+    "starColor": "colors.primary",
+    "countColor": "colors.text_medium"
+    }
+    },
+    "cart": {
+    "summaryCard": {
+    "backgroundColor": "colors.card_background",
+    "borderRadius": "0.75rem",
+    "boxShadow": "md",
+    "padding": "1.5rem"
+    },
+    "totalStyle": {
+    "size": "1.5rem",
+    "weight": "semibold",
+    "color": "colors.text_dark"
+    },
+    "removeItem": {
+    "textColor": "colors.text_light",
+    "textSize": "0.875rem"
+    }
+    },
+    "form": {
+    "card": "components.card",
+    "inputField": {
+    "backgroundColor": "colors.card_background",
+    "borderRadius": "0.5rem",
+    "borderColor": "colors.border_light",
+    "borderWidth": "1px",
+    "padding": "0.75rem"
+    },
+    "labelStyle": {
+    "textSize": "0.875rem",
+    "textColor": "colors.text_medium"
+    },
+    "linkStyle": {
+    "textColor": "colors.primary",
+    "textSize": "0.875rem",
+    "fontWeight": "medium"
+    }
+    }
+    },
+    "layout": {
+    "container": {
+    "maxWidth": "72rem",
+    "margin_x": "auto",
+    "padding_x": "1rem"
+    },
+    "productGrid": {
+    "columns": "3",
+    "gap": "1.5rem",
+    "responsive": {
+    "lg": {
+    "columns": "4"
+    },
+    "md": {
+    "columns": "2"
+    },
+    "sm": {
+    "columns": "1"
+    }
+    }
+    },
+    "serviceGrid": {
+    "columns": "4",
+    "gap": "1rem",
+    "responsive": {
+    "md": {
+    "columns": "2"
+    },
+    "sm": {
+    "columns": "1"
+    }
+    }
+    },
+    "shopLayout": {
+    "columns": "5",
+    "columnSpans": {
+    "sidebar": "1",
+    "content": "4"
+    },
+    "responsive": {
+    "md": {
+    "columns": "1",
+    "columnSpans": null
+    }
+    }
+    },
+    "pageLayout": {
+    "columns": "2",
+    "gap": "3rem",
+    "responsive": {
+    "md": {
+    "columns": "1"
+    }
+    }
+    },
+    "notesForAI": "The overall aesthetic is clean, modern, and minimal. Use rounded corners and subtle shadows extensively on all containers. The primary call-to-action color is a mint green. The layout is section-based with carousels for the top hero and product listings. The mobile view is a single column. The shop page adds a sidebar on the left for filters, which collapses on mobile. The product detail page has a two-column layout that becomes a single column on mobile. The cart page has a two-column layout with the cart items on the left and a summary on the right. Form pages (login/register) are centered with a single card."
+    }
+    }

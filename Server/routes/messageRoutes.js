@@ -2,35 +2,26 @@ const express = require('express');
 const router = express.Router();
 const Message = require('../models/Message');
 
-// POST create new message (public)
+// POST create new message
 router.post('/', async (req, res) => {
   try {
-    const { name, email, subject, message, images } = req.body;
+    const { name, email, phone, subject, message } = req.body;
 
     // Validate required fields
-    if (!name || !email || !subject || !message) {
+    if (!name || !email || !message) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide name, email, subject, and message'
+        message: 'Please provide name, email, and message'
       });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide a valid email address'
-      });
-    }
-
+    // Create new message
     const newMessage = new Message({
-      name: name.trim(),
-      email: email.trim(),
-      subject: subject.trim(),
-      message: message.trim(),
-      images: Array.isArray(images) ? images : [],
-      status: 'unread'
+      name,
+      email,
+      phone: phone || '',
+      subject: subject || '',
+      message
     });
 
     await newMessage.save();
@@ -44,20 +35,23 @@ router.post('/', async (req, res) => {
     console.error('Error creating message:', error);
     res.status(500).json({
       success: false,
-      message: 'Error sending message',
+      message: 'Error creating message',
       error: error.message
     });
   }
 });
 
-// GET all messages (admin only)
+// GET all messages (for admin)
 router.get('/', async (req, res) => {
   try {
     const { status } = req.query;
-    const query = status && status !== 'all' ? { status } : {};
+    let query = {};
     
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
     const messages = await Message.find(query).sort({ createdAt: -1 });
-    
     res.json({
       success: true,
       count: messages.length,
@@ -73,7 +67,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET single message by ID (admin only)
+// GET single message by ID
 router.get('/:id', async (req, res) => {
   try {
     const message = await Message.findById(req.params.id);
@@ -99,24 +93,12 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PUT update message status (admin only)
+// PUT update message status
 router.put('/:id/status', async (req, res) => {
   try {
     const { status, adminNotes } = req.body;
     
-    const updateData = {};
-    if (status) {
-      updateData.status = status;
-    }
-    if (adminNotes !== undefined) {
-      updateData.adminNotes = adminNotes;
-    }
-    
-    const message = await Message.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true }
-    );
+    const message = await Message.findById(req.params.id);
     
     if (!message) {
       return res.status(404).json({
@@ -124,26 +106,36 @@ router.put('/:id/status', async (req, res) => {
         message: 'Message not found'
       });
     }
-    
+
+    message.status = status || message.status;
+    if (status === 'replied' || status === 'read') {
+      message.read = true;
+    }
+    if (adminNotes) {
+      message.adminNotes = adminNotes;
+    }
+
+    await message.save();
+
     res.json({
       success: true,
-      message: 'Message updated successfully',
+      message: 'Message status updated successfully',
       data: message
     });
   } catch (error) {
-    console.error('Error updating message:', error);
+    console.error('Error updating message status:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating message',
+      message: 'Error updating message status',
       error: error.message
     });
   }
 });
 
-// DELETE message (admin only)
+// DELETE message
 router.delete('/:id', async (req, res) => {
   try {
-    const message = await Message.findByIdAndDelete(req.params.id);
+    const message = await Message.findById(req.params.id);
     
     if (!message) {
       return res.status(404).json({
@@ -151,7 +143,9 @@ router.delete('/:id', async (req, res) => {
         message: 'Message not found'
       });
     }
-    
+
+    await Message.findByIdAndDelete(req.params.id);
+
     res.json({
       success: true,
       message: 'Message deleted successfully'

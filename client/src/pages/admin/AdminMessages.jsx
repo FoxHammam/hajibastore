@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminHeader from '../../components/admin/AdminHeader';
-import { Search, Trash2, Eye, Archive, Mail, X, CheckCircle } from 'lucide-react';
 import { messageAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import '../../styles/admin.css';
 
@@ -12,18 +10,17 @@ const AdminMessages = () => {
   const { getAuthToken } = useAuth();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isTablet, setIsTablet] = useState(window.innerWidth < 768);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
       setIsTablet(window.innerWidth < 768);
     };
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -31,79 +28,61 @@ const AdminMessages = () => {
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      const token = getAuthToken();
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-      const apiUrl = apiBaseUrl.endsWith('/api') ? apiBaseUrl : `${apiBaseUrl}/api`;
-      const response = await axios.get(`${apiUrl}/messages${activeTab !== 'all' ? `?status=${activeTab}` : ''}`, { headers });
-      setMessages(response.data.data || []);
+      const allMessages = await messageAPI.getAll();
+      setMessages(Array.isArray(allMessages) ? allMessages : []);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching messages:', error);
-    } finally {
       setLoading(false);
+      // Set empty array if API doesn't exist or fails
+      setMessages([]);
     }
   };
 
   useEffect(() => {
     fetchMessages();
-  }, [activeTab]);
+  }, []);
 
-  const handleStatusUpdate = async (messageId, newStatus) => {
+  const handleUpdateStatus = async (messageId, status, adminNotes = '') => {
     try {
-      const token = getAuthToken();
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-      const apiUrl = apiBaseUrl.endsWith('/api') ? apiBaseUrl : `${apiBaseUrl}/api`;
-      await axios.put(`${apiUrl}/messages/${messageId}/status`, { status: newStatus }, { headers });
+      await messageAPI.updateStatus(messageId, status, adminNotes);
+      toast.success('Message status updated successfully!');
       fetchMessages();
-      if (selectedMessage && selectedMessage._id === messageId) {
-        setSelectedMessage({ ...selectedMessage, status: newStatus });
-      }
     } catch (error) {
       console.error('Error updating message status:', error);
-      toast.error('Failed to update message status');
+      toast.error('Failed to update message status. Please try again.');
     }
   };
 
-  const handleDelete = async (messageId) => {
+  const handleDeleteMessage = async (messageId) => {
     try {
-      const token = getAuthToken();
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-      const apiUrl = apiBaseUrl.endsWith('/api') ? apiBaseUrl : `${apiBaseUrl}/api`;
-      await axios.delete(`${apiUrl}/messages/${messageId}`, { headers });
+      await messageAPI.delete(messageId);
+      toast.success('Message deleted successfully!');
       fetchMessages();
-      setDeleteConfirm(null);
-      if (selectedMessage && selectedMessage._id === messageId) {
-        setSelectedMessage(null);
-      }
+      setSelectedMessage(null);
     } catch (error) {
       console.error('Error deleting message:', error);
-      toast.error('Failed to delete message');
+      toast.error('Failed to delete message. Please try again.');
     }
   };
 
-  const filteredMessages = messages.filter((message) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      message.name.toLowerCase().includes(searchLower) ||
-      message.email.toLowerCase().includes(searchLower) ||
-      message.subject.toLowerCase().includes(searchLower) ||
-      message.message.toLowerCase().includes(searchLower)
-    );
-  });
-
-  const getStatusCount = (status) => {
-    return messages.filter(m => status === 'all' ? true : m.status === status).length;
+  const getFilteredMessages = () => {
+    switch (activeTab) {
+      case 'unread':
+        return messages.filter(m => !m.read || m.status === 'unread');
+      case 'replied':
+        return messages.filter(m => m.status === 'replied' || m.status === 'responded');
+      case 'archived':
+        return messages.filter(m => m.status === 'archived');
+      default:
+        return messages;
+    }
   };
 
-  const tabs = [
-    { id: 'all', label: 'All', count: getStatusCount('all') },
-    { id: 'unread', label: 'Unread', count: getStatusCount('unread') },
-    { id: 'read', label: 'Read', count: getStatusCount('read') },
-    { id: 'replied', label: 'Replied', count: getStatusCount('replied') },
-    { id: 'archived', label: 'Archived', count: getStatusCount('archived') },
-  ];
+  const filteredMessages = getFilteredMessages();
+  const unreadCount = messages.filter(m => !m.read || m.status === 'unread').length;
+  const repliedCount = messages.filter(m => m.status === 'replied' || m.status === 'responded').length;
+  const archivedCount = messages.filter(m => m.status === 'archived').length;
 
   return (
     <div
@@ -169,18 +148,23 @@ const AdminMessages = () => {
               flexWrap: 'wrap',
             }}
           >
-            {tabs.map((tab) => (
+            {[
+              { key: 'all', label: 'All', count: messages.length },
+              { key: 'unread', label: 'Unread', count: unreadCount },
+              { key: 'replied', label: 'Replied', count: repliedCount },
+              { key: 'archived', label: 'Archived', count: archivedCount },
+            ].map(tab => (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
                 style={{
                   padding: '12px 20px',
-                  backgroundColor: 'transparent',
                   border: 'none',
-                  borderBottom: activeTab === tab.id ? '2px solid #135bec' : '2px solid transparent',
-                  color: activeTab === tab.id ? '#135bec' : '#616f89',
+                  borderBottom: activeTab === tab.key ? '2px solid #135bec' : '2px solid transparent',
+                  backgroundColor: 'transparent',
+                  color: activeTab === tab.key ? '#135bec' : '#616f89',
                   fontSize: '14px',
-                  fontWeight: activeTab === tab.id ? 600 : 400,
+                  fontWeight: activeTab === tab.key ? 600 : 500,
                   cursor: 'pointer',
                   fontFamily: 'Inter, sans-serif',
                   transition: 'all 0.2s ease',
@@ -193,49 +177,7 @@ const AdminMessages = () => {
             ))}
           </div>
 
-          {/* Search Bar */}
-          <div
-            style={{
-              position: 'relative',
-              marginBottom: '24px',
-            }}
-          >
-            <Search
-              size={20}
-              style={{
-                position: 'absolute',
-                left: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#616f89',
-                pointerEvents: 'none',
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search messages..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px 10px 40px',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontFamily: 'Inter, sans-serif',
-                outline: 'none',
-                transition: 'border-color 0.2s ease',
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#135bec';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = '#e2e8f0';
-              }}
-            />
-          </div>
-
-          {/* Messages Table */}
+          {/* Messages List */}
           <div
             className="admin-card"
             style={{
@@ -256,220 +198,147 @@ const AdminMessages = () => {
                 No messages found
               </p>
             ) : (
-              <div style={{ overflowX: 'auto', minWidth: '600px' }}>
-                <table
-                  style={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                  }}
-                >
-                  <thead>
-                    <tr
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {filteredMessages.map((message) => {
+                  const isUnread = !message.read || message.status === 'unread';
+                  return (
+                    <div
+                      key={message._id || message.id}
                       style={{
-                        backgroundColor: '#f6f6f8',
-                        borderBottom: '1px solid #e2e8f0',
+                        padding: '16px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        backgroundColor: isUnread ? '#f0f7ff' : '#ffffff',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
                       }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f6f6f8';
+                        e.currentTarget.style.borderColor = '#135bec';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = isUnread ? '#f0f7ff' : '#ffffff';
+                        e.currentTarget.style.borderColor = '#e2e8f0';
+                      }}
+                      onClick={() => setSelectedMessage(message)}
                     >
-                      <th
-                        style={{
-                          padding: '0.8rem 1rem',
-                          textAlign: 'left',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          color: '#111318',
-                        }}
-                      >
-                        Sender
-                      </th>
-                      <th
-                        style={{
-                          padding: '0.8rem 1rem',
-                          textAlign: 'left',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          color: '#111318',
-                        }}
-                      >
-                        Subject
-                      </th>
-                      <th
-                        style={{
-                          padding: '0.8rem 1rem',
-                          textAlign: 'left',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          color: '#111318',
-                          display: isTablet ? 'none' : 'table-cell',
-                        }}
-                      >
-                        Date
-                      </th>
-                      <th
-                        style={{
-                          padding: '0.8rem 1rem',
-                          textAlign: 'left',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          color: '#111318',
-                        }}
-                      >
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredMessages.map((message) => (
-                      <tr
-                        key={message._id}
-                        onClick={() => {
-                          setSelectedMessage(message);
-                          if (message.status === 'unread') {
-                            handleStatusUpdate(message._id, 'read');
-                          }
-                        }}
-                        style={{
-                          borderBottom: '1px solid #e2e8f0',
-                          cursor: 'pointer',
-                          backgroundColor: selectedMessage?._id === message._id ? '#f0f4ff' : '#ffffff',
-                          transition: 'background-color 0.2s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (selectedMessage?._id !== message._id) {
-                            e.currentTarget.style.backgroundColor = '#f6f6f8';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (selectedMessage?._id !== message._id) {
-                            e.currentTarget.style.backgroundColor = '#ffffff';
-                          }
-                        }}
-                      >
-                        <td
-                          style={{
-                            padding: '0.8rem 1rem',
-                            fontSize: '14px',
-                            color: '#111318',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            {message.status === 'unread' && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            {isUnread && (
                               <div
                                 style={{
                                   width: '8px',
                                   height: '8px',
                                   borderRadius: '50%',
                                   backgroundColor: '#135bec',
-                                  flexShrink: 0,
                                 }}
                               />
                             )}
-                            <div>
-                              <div style={{ fontWeight: 500, color: '#111318' }}>
-                                {message.name}
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#616f89' }}>
-                                {message.email}
-                              </div>
-                            </div>
+                            <h3
+                              style={{
+                                fontSize: '14px',
+                                fontWeight: isUnread ? 600 : 500,
+                                color: '#111318',
+                                margin: 0,
+                              }}
+                            >
+                              {message.name || message.fullName || 'Anonymous'}
+                            </h3>
+                            <span
+                              style={{
+                                fontSize: '12px',
+                                color: '#616f89',
+                              }}
+                            >
+                              {message.email || message.phone || ''}
+                            </span>
                           </div>
-                        </td>
-                        <td
-                          style={{
-                            padding: '0.8rem 1rem',
-                            fontSize: '14px',
-                            color: '#111318',
-                            fontWeight: message.status === 'unread' ? 600 : 400,
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>{message.subject}</span>
-                            {message.images && message.images.length > 0 && (
-                              <Mail size={14} color="#616f89" />
+                          <p
+                            style={{
+                              fontSize: '14px',
+                              color: '#616f89',
+                              margin: 0,
+                              marginBottom: '8px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {message.message || message.subject || 'No message content'}
+                          </p>
+                          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <span
+                              style={{
+                                fontSize: '12px',
+                                color: '#616f89',
+                              }}
+                            >
+                              {new Date(message.createdAt || message.date).toLocaleDateString()}
+                            </span>
+                            {message.status && (
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  padding: '0.25rem 0.625rem',
+                                  borderRadius: '9999px',
+                                  fontSize: '11px',
+                                  fontWeight: 500,
+                                  backgroundColor: message.status === 'replied' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+                                  color: message.status === 'replied' ? '#047857' : '#b45309',
+                                }}
+                              >
+                                {message.status}
+                              </span>
                             )}
                           </div>
-                        </td>
-                        <td
-                          style={{
-                            padding: '0.8rem 1rem',
-                            fontSize: '14px',
-                            color: '#616f89',
-                            display: isTablet ? 'none' : 'table-cell',
-                          }}
-                        >
-                          {new Date(message.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </td>
-                        <td
-                          style={{
-                            padding: '0.8rem 1rem',
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
+                          {message.status !== 'replied' && (
                             <button
-                              onClick={() => {
-                                setSelectedMessage(message);
-                                if (message.status === 'unread') {
-                                  handleStatusUpdate(message._id, 'read');
-                                }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpdateStatus(message._id || message.id, 'replied');
                               }}
                               style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '32px',
-                                height: '32px',
-                                border: 'none',
-                                backgroundColor: '#f6f6f8',
-                                borderRadius: '8px',
+                                padding: '6px 12px',
+                                border: '1px solid #135bec',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontWeight: 500,
                                 cursor: 'pointer',
-                                color: '#616f89',
-                                transition: 'all 0.2s ease',
+                                fontFamily: 'Inter, sans-serif',
+                                backgroundColor: 'transparent',
+                                color: '#135bec',
                               }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#e2e8f0';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#f6f6f8';
-                              }}
-                              title="View Message"
                             >
-                              <Eye size={16} />
+                              Reply
                             </button>
-                            <button
-                              onClick={() => setDeleteConfirm(message)}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '32px',
-                                height: '32px',
-                                border: 'none',
-                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                color: '#dc2626',
-                                transition: 'all 0.2s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-                              }}
-                              title="Delete Message"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateStatus(message._id || message.id, 'archived');
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              cursor: 'pointer',
+                              fontFamily: 'Inter, sans-serif',
+                              backgroundColor: '#ffffff',
+                              color: '#616f89',
+                            }}
+                          >
+                            Archive
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -495,297 +364,98 @@ const AdminMessages = () => {
           onClick={() => setSelectedMessage(null)}
         >
           <div
-            className="admin-card"
             style={{
               backgroundColor: '#ffffff',
               borderRadius: '12px',
-              padding: isTablet ? '16px' : '24px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-              maxWidth: '800px',
+              padding: '24px',
+              maxWidth: '600px',
               width: '100%',
               maxHeight: '90vh',
               overflowY: 'auto',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Message Detail */}
-            {selectedMessage && (
-              <div
-                className="admin-card"
-                style={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  padding: isTablet ? '16px' : '24px',
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '24px' }}>
-                  <div>
-                    <h2
-                      style={{
-                        fontSize: '20px',
-                        fontWeight: 600,
-                        color: '#111318',
-                        margin: 0,
-                        marginBottom: '8px',
-                      }}
-                    >
-                      {selectedMessage.subject}
-                    </h2>
-                    <p style={{ fontSize: '14px', color: '#616f89', margin: '4px 0' }}>
-                      <strong>From:</strong> {selectedMessage.name} ({selectedMessage.email})
-                    </p>
-                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0' }}>
-                      {new Date(selectedMessage.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedMessage(null)}
-                    style={{
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      color: '#616f89',
-                    }}
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    padding: '16px',
-                    backgroundColor: '#f6f6f8',
-                    borderRadius: '8px',
-                    marginBottom: '24px',
-                    whiteSpace: 'pre-wrap',
-                    fontSize: '14px',
-                    color: '#111318',
-                    lineHeight: '1.6',
-                  }}
-                >
-                  {selectedMessage.message}
-                </div>
-
-                {/* Images */}
-                {selectedMessage.images && selectedMessage.images.length > 0 && (
-                  <div style={{ marginBottom: '24px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#111318', marginBottom: '12px' }}>
-                      Attached Images ({selectedMessage.images.length})
-                    </h3>
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                        gap: '12px',
-                      }}
-                    >
-                      {selectedMessage.images.map((img, index) => (
-                        <div key={index} style={{ position: 'relative' }}>
-                          <img
-                            src={img}
-                            alt={`Attachment ${index + 1}`}
-                            style={{
-                              width: '100%',
-                              height: '150px',
-                              objectFit: 'cover',
-                              borderRadius: '8px',
-                              border: '1px solid #e2e8f0',
-                              cursor: 'pointer',
-                            }}
-                            onClick={() => window.open(img, '_blank')}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                  {selectedMessage.status !== 'read' && (
-                    <button
-                      onClick={() => handleStatusUpdate(selectedMessage._id, 'read')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 16px',
-                        border: 'none',
-                        borderRadius: '8px',
-                        backgroundColor: '#f6f6f8',
-                        color: '#111318',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                        fontFamily: 'Inter, sans-serif',
-                      }}
-                    >
-                      <Eye size={16} />
-                      Mark as Read
-                    </button>
-                  )}
-                  {selectedMessage.status !== 'replied' && (
-                    <button
-                      onClick={() => handleStatusUpdate(selectedMessage._id, 'replied')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 16px',
-                        border: 'none',
-                        borderRadius: '8px',
-                        backgroundColor: '#135bec',
-                        color: '#ffffff',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                        fontFamily: 'Inter, sans-serif',
-                      }}
-                    >
-                      <CheckCircle size={16} />
-                      Mark as Replied
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleStatusUpdate(selectedMessage._id, 'archived')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '8px 16px',
-                      border: 'none',
-                      borderRadius: '8px',
-                      backgroundColor: '#f6f6f8',
-                      color: '#111318',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      fontFamily: 'Inter, sans-serif',
-                    }}
-                  >
-                    <Archive size={16} />
-                    Archive
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm(selectedMessage)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '8px 16px',
-                      border: 'none',
-                      borderRadius: '8px',
-                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                      color: '#dc2626',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      fontFamily: 'Inter, sans-serif',
-                    }}
-                  >
-                    <Trash2 size={16} />
-                    Delete
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px',
-          }}
-          onClick={() => setDeleteConfirm(null)}
-        >
-          <div
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              padding: '24px',
-              maxWidth: '400px',
-              width: '100%',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#111318',
-                marginBottom: '12px',
-              }}
-            >
-              Delete Message
-            </h3>
-            <p
-              style={{
-                fontSize: '14px',
-                color: '#616f89',
-                marginBottom: '24px',
-              }}
-            >
-              Are you sure you want to delete this message? This action cannot be undone.
-            </p>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '12px',
-              }}
-            >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#111318', margin: 0 }}>
+                Message Details
+              </h2>
               <button
-                onClick={() => setDeleteConfirm(null)}
+                onClick={() => setSelectedMessage(null)}
                 style={{
-                  padding: '10px 20px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  fontFamily: 'Inter, sans-serif',
-                  backgroundColor: '#ffffff',
-                  color: '#616f89',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm._id)}
-                style={{
-                  padding: '10px 20px',
+                  background: 'none',
                   border: 'none',
+                  fontSize: '24px',
+                  color: '#616f89',
+                  cursor: 'pointer',
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: '#111318' }}>From:</strong>{' '}
+              <span style={{ color: '#616f89' }}>
+                {selectedMessage.name || selectedMessage.fullName || 'Anonymous'}
+              </span>
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: '#111318' }}>Email:</strong>{' '}
+              <span style={{ color: '#616f89' }}>{selectedMessage.email || 'N/A'}</span>
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: '#111318' }}>Phone:</strong>{' '}
+              <span style={{ color: '#616f89' }}>{selectedMessage.phone || 'N/A'}</span>
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: '#111318' }}>Date:</strong>{' '}
+              <span style={{ color: '#616f89' }}>
+                {new Date(selectedMessage.createdAt || selectedMessage.date).toLocaleString()}
+              </span>
+            </div>
+            <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#f6f6f8', borderRadius: '8px' }}>
+              <strong style={{ color: '#111318', display: 'block', marginBottom: '8px' }}>Message:</strong>
+              <p style={{ color: '#616f89', margin: 0, lineHeight: '1.6' }}>
+                {selectedMessage.message || selectedMessage.subject || 'No message content'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => handleDeleteMessage(selectedMessage._id || selectedMessage.id)}
+                style={{
+                  padding: '10px 20px',
+                  border: '1px solid #dc2626',
                   borderRadius: '8px',
                   fontSize: '14px',
                   fontWeight: 500,
                   cursor: 'pointer',
                   fontFamily: 'Inter, sans-serif',
-                  backgroundColor: '#dc2626',
-                  color: '#ffffff',
+                  backgroundColor: 'transparent',
+                  color: '#dc2626',
                 }}
               >
                 Delete
               </button>
+              {selectedMessage.status !== 'replied' && (
+                <button
+                  onClick={() => {
+                    handleUpdateStatus(selectedMessage._id || selectedMessage.id, 'replied');
+                    setSelectedMessage(null);
+                  }}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#135bec',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    fontFamily: 'Inter, sans-serif',
+                  }}
+                >
+                  Mark as Replied
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -795,3 +465,4 @@ const AdminMessages = () => {
 };
 
 export default AdminMessages;
+

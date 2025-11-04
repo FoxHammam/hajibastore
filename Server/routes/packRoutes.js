@@ -1,25 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('../models/Product');
+const Pack = require('../models/Pack');
 
-// GET all packs (products with productType='pack')
+// GET all packs
 router.get('/', async (req, res) => {
   try {
-    // Show all in-stock packs for public, all packs for admin
-    const isAdmin = req.query.admin === 'true';
-    const query = isAdmin ? { productType: 'pack' } : { productType: 'pack', inStock: true };
-    const packs = await Product.find(query).sort({ createdAt: -1 });
-    console.log(`Fetched ${packs.length} packs from database (admin: ${isAdmin}, query:`, JSON.stringify(query), ')');
+    // If admin=true, return all packs (including out of stock)
+    const query = req.query.admin === 'true' ? {} : { inStock: true };
+    const packs = await Pack.find(query).sort({ createdAt: -1 });
     
-    // Also log total packs count for debugging
-    const totalPacks = await Product.countDocuments({ productType: 'pack' });
-    const inStockCount = await Product.countDocuments({ productType: 'pack', inStock: true });
-    console.log(`Total packs in DB: ${totalPacks}, In-stock: ${inStockCount}`);
+    // Add productType to each pack for frontend
+    const packsWithType = packs.map(p => ({
+      ...p.toObject(),
+      productType: 'pack'
+    }));
     
     res.json({
       success: true,
-      count: packs.length,
-      data: packs
+      count: packsWithType.length,
+      data: packsWithType
     });
   } catch (error) {
     console.error('Error fetching packs:', error);
@@ -34,7 +33,7 @@ router.get('/', async (req, res) => {
 // GET single pack by ID
 router.get('/:id', async (req, res) => {
   try {
-    const pack = await Product.findOne({ _id: req.params.id, productType: 'pack' });
+    const pack = await Pack.findById(req.params.id);
     
     if (!pack) {
       return res.status(404).json({

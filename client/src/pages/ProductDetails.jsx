@@ -27,9 +27,13 @@ function ProductDetails() {
     try {
       setLoading(true);
       const response = await productAPI.getById(id);
-      console.log('Product fetched:', response.data);
-      console.log('Product image URL:', response.data?.image);
-      setProduct(response.data);
+      const productData = response.data || response;
+      console.log('Product fetched:', productData);
+      console.log('Product multipleImages:', productData?.multipleImages);
+      console.log('Product contentSections:', productData?.contentSections);
+      console.log('Product multipleImages count:', productData?.multipleImages?.length || 0);
+      console.log('Product contentSections count:', productData?.contentSections?.length || 0);
+      setProduct(productData);
       setError(null);
     } catch (err) {
       console.error('Failed to fetch product:', err);

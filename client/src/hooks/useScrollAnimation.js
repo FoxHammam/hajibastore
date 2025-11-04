@@ -1,43 +1,44 @@
 import { useEffect, useRef, useState } from 'react';
 
-const useScrollAnimation = (options = {}) => {
+/**
+ * Custom hook for scroll animations using Intersection Observer
+ * @param {Object} options - Configuration options
+ * @param {number} options.threshold - Threshold for intersection (0.0 to 1.0)
+ * @param {string} options.rootMargin - Margin around the root element
+ * @returns {Array} [ref, isVisible] - Ref to attach to element and visibility state
+ */
+export const useScrollAnimation = (options = {}) => {
+  const { threshold = 0.1, rootMargin = '0px' } = options;
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          // Optionally disconnect after first animation
-          if (options.once !== false) {
-            observer.disconnect();
-          }
-        } else if (!options.once) {
-          setIsVisible(false);
+          // Optionally disconnect after first visibility to improve performance
+          // observer.disconnect();
         }
       },
       {
-        threshold: options.threshold || 0.1,
-        rootMargin: options.rootMargin || '0px',
+        threshold,
+        rootMargin,
       }
     );
 
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
+    observer.observe(element);
 
     return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
+      if (element) {
+        observer.unobserve(element);
       }
-      observer.disconnect();
     };
-  }, [options.threshold, options.rootMargin, options.once]);
+  }, [threshold, rootMargin]);
 
   return [ref, isVisible];
 };
-
-export default useScrollAnimation;
-export { useScrollAnimation };
 

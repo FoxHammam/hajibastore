@@ -84,20 +84,13 @@ router.post('/login', async (req, res) => {
     console.log('Login successful for user:', user.username);
 
     // Generate JWT token
-    if (!process.env.JWT_SECRET) {
-      console.error('❌ JWT_SECRET is missing in environment variables');
-      return res.status(500).json({
-        success: false,
-        message: 'Server configuration error: JWT_SECRET is missing. Please restart the server after adding JWT_SECRET to .env file.'
-      });
-    }
     const token = jwt.sign(
       { 
         userId: user._id, 
         username: user.username,
         role: user.role 
       },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'your-secret-key-change-in-production',
       { expiresIn: '24h' }
     );
 
@@ -136,15 +129,9 @@ router.get('/verify', async (req, res) => {
       });
     }
 
-    if (!process.env.JWT_SECRET) {
-      return res.status(500).json({
-        success: false,
-        message: 'Server configuration error'
-      });
-    }
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET || 'your-secret-key-change-in-production'
     );
 
     const user = await User.findById(decoded.userId).select('-password');

@@ -26,9 +26,13 @@ function PackDetails() {
   const fetchPack = async () => {
     try {
       setLoading(true);
-      const packData = await packAPI.getById(id);
+      const response = await packAPI.getById(id);
+      const packData = response.data || response;
       console.log('Pack fetched:', packData);
-      console.log('Pack image URL:', packData?.image);
+      console.log('Pack multipleImages:', packData?.multipleImages);
+      console.log('Pack contentSections:', packData?.contentSections);
+      console.log('Pack multipleImages count:', packData?.multipleImages?.length || 0);
+      console.log('Pack contentSections count:', packData?.contentSections?.length || 0);
       setPack(packData);
       setError(null);
     } catch (err) {
@@ -92,10 +96,6 @@ function PackDetails() {
       }
     } catch (err) {
       console.error('Failed to submit order - Full error:', err);
-      console.error('Error response data:', err.response?.data);
-      console.error('Error response status:', err.response?.status);
-      console.error('Error message:', err.message);
-      
       let errorMessage = "Failed to submit order. Please try again.";
       
       if (!err.response) {
@@ -108,7 +108,6 @@ function PackDetails() {
       
       toast.error(errorMessage);
     } finally {
-      // Always reset submitting state to allow new submissions
       setSubmitting(false);
     }
   };
@@ -151,7 +150,7 @@ function PackDetails() {
     <div className="min-h-screen bg-white pt-10 pb-24">
       {/* Two-column layout */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 px-2 sm:px-4 lg:px-8">
-        {/* LEFT: Fixed Image Gallery (PC View) */}
+        {/* LEFT: Fixed Image Gallery */}
         <div className="lg:sticky lg:top-4 lg:self-start lg:h-[calc(100vh-2rem)] w-full flex flex-col gap-4 order-1">
           {/* Main Image with Navigation Arrows */}
           <div className="flex-1 w-full relative bg-gray-100 rounded-lg overflow-hidden min-h-[500px] group">
@@ -215,7 +214,7 @@ function PackDetails() {
           )}
         </div>
 
-        {/* RIGHT: Scrollable Content (Title, Order Form, Description, Sections) */}
+        {/* RIGHT: Scrollable Content */}
         <div className="flex flex-col space-y-6 p-4 lg:p-8 order-2">
           {/* Pack Title & Price */}
           <div className="mt-4 lg:mt-0">
@@ -288,13 +287,13 @@ function PackDetails() {
               className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
             ></textarea>
 
-             <button
-               type="submit"
-               disabled={submitting || !pack || (pack && !pack.inStock)}
-               className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-             >
-               {submitting ? 'Submitting...' : pack && !pack.inStock ? 'Out of Stock' : 'Buy Now'}
-             </button>
+            <button
+              type="submit"
+              disabled={submitting || !pack || (pack && !pack.inStock)}
+              className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? 'Submitting...' : pack && !pack.inStock ? 'Out of Stock' : 'Buy Now'}
+            </button>
           </form>
 
           {/* Content Sections */}
@@ -302,7 +301,7 @@ function PackDetails() {
             <div className="space-y-12 mt-6">
               {pack.contentSections.map((section, index) => (
                 <div key={index} className="space-y-4">
-                  {/* Section Description (Before Image) */}
+                  {/* Section Description */}
                   {section.description && (
                     <div>
                       <p className="text-black-900 leading-relaxed text-4xl whitespace-pre-line">
@@ -335,29 +334,27 @@ function PackDetails() {
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-40">
         <div className="max-w-md mx-auto p-4">
           <button
-             onClick={scrollToBuyForm}
-             className="w-full bg-green-500 hover:bg-green-600 text-white py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-200 shadow-md hover:shadow-xl"
-           >
-             Buy Now - ${pack.price}
+            onClick={scrollToBuyForm}
+            className="w-full bg-green-500 hover:bg-green-600 text-white py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-200 shadow-md hover:shadow-xl"
+          >
+            Buy Now - ${pack.price}
           </button>
         </div>
       </div>
 
       {/* Fixed WhatsApp Icon */}
-    <a
-  href="https://wa.me/212600000000"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="fixed bottom-24 right-4 bg-green-500 hover:bg-green-600 p-3 rounded-full shadow-lg z-50 animate-bounce transition-transform duration-300 hover:scale-110"
->
-  <img
-    src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-    alt="WhatsApp"
-    className="w-8 h-8"
-  />
-</a>
-
-
+      <a
+        href="https://wa.me/212600000000"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-24 right-4 bg-green-500 hover:bg-green-600 p-3 rounded-full shadow-lg z-50 animate-bounce transition-transform duration-300 hover:scale-110"
+      >
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+          alt="WhatsApp"
+          className="w-8 h-8"
+        />
+      </a>
     </div>
   );
 }

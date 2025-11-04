@@ -21,11 +21,8 @@ MONGO_URL=mongodb://localhost:27017/hammam-ecom
 # For MongoDB Atlas use:
 # MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/hammam-ecom
 
-PORT=8000
+PORT=5000
 NODE_ENV=development
-
-JWT_SECRET=your-secret-key-change-this-in-production
-FRONTEND_URL=http://localhost:5173
 ```
 
 ---
@@ -75,7 +72,7 @@ cd Server
 npm run dev
 ```
 
-Server will run on: `http://localhost:8000`
+Server will run on: `http://localhost:5000`
 
 ### Start the Frontend
 Open terminal #2:
@@ -91,11 +88,11 @@ Frontend will run on: `http://localhost:5173`
 ## ✅ Verify Everything Works
 
 1. **Test Backend Health:**
-   Open browser: `http://localhost:8000/api/health`
+   Open browser: `http://localhost:5000/api/health`
    Should see: `{"success":true,"message":"Server is running"}`
 
 2. **Test Products API:**
-   `http://localhost:8000/api/products`
+   `http://localhost:5000/api/products`
    Should return list of 20 products
 
 3. **Test Frontend:**

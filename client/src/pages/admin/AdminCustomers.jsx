@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminHeader from '../../components/admin/AdminHeader';
-import { Search, Filter, UserPlus } from 'lucide-react';
+import { Search, Filter, Plus } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/admin.css';
@@ -24,51 +24,43 @@ const AdminCustomers = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
   const fetchCustomers = async () => {
     try {
       const token = getAuthToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
       const apiUrl = apiBaseUrl.endsWith('/api') ? apiBaseUrl : `${apiBaseUrl}/api`;
-      const response = await axios.get(`${apiUrl}/orders`, { headers });
-      const orders = response.data.data || [];
-
-      // Extract unique customers from orders
-      const customerMap = new Map();
       
+      // Fetch orders and extract unique customers
+      const ordersResponse = await axios.get(`${apiUrl}/orders`, { headers });
+      const orders = ordersResponse.data.data || [];
+      
+      // Group orders by customer (phone + fullName)
+      const customerMap = new Map();
       orders.forEach(order => {
         const key = `${order.phone}-${order.fullName}`;
         if (!customerMap.has(key)) {
           customerMap.set(key, {
-            _id: order._id,
+            id: key,
             fullName: order.fullName,
             phone: order.phone,
-            email: order.email || '',
+            email: order.email || 'N/A',
             city: order.city,
-            address: order.address,
             totalOrders: 0,
             totalSpent: 0,
             lastOrder: order.createdAt,
-            status: 'active',
+            status: 'Active',
           });
         }
-        
         const customer = customerMap.get(key);
         customer.totalOrders += 1;
         customer.totalSpent += order.totalAmount || 0;
-        
-        // Update last order date if this order is more recent
         if (new Date(order.createdAt) > new Date(customer.lastOrder)) {
           customer.lastOrder = order.createdAt;
         }
       });
-
-      const customersArray = Array.from(customerMap.values());
-      setCustomers(customersArray);
+      
+      setCustomers(Array.from(customerMap.values()));
       setLoading(false);
     } catch (error) {
       console.error('Error fetching customers:', error);
@@ -76,24 +68,17 @@ const AdminCustomers = () => {
     }
   };
 
-  const filteredCustomers = customers.filter((customer) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      customer.fullName?.toLowerCase().includes(searchLower) ||
-      customer.phone?.includes(searchTerm) ||
-      customer.email?.toLowerCase().includes(searchLower) ||
-      customer.city?.toLowerCase().includes(searchLower)
-    );
-  });
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
-  const getInitials = (name) => {
-    if (!name) return '??';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
+  const filteredCustomers = customers.filter((customer) => {
+    const matchesSearch =
+      customer.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.phone?.includes(searchTerm) ||
+      customer.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
 
   return (
     <div
@@ -153,7 +138,7 @@ const AdminCustomers = () => {
           <div
             style={{
               display: 'flex',
-              gap: '16px',
+              gap: '12px',
               marginBottom: '24px',
               flexWrap: 'wrap',
               alignItems: 'center',
@@ -163,7 +148,7 @@ const AdminCustomers = () => {
               style={{
                 position: 'relative',
                 flex: 1,
-                minWidth: isTablet ? '100%' : '300px',
+                minWidth: isTablet ? '100%' : '250px',
               }}
             >
               <Search
@@ -174,6 +159,7 @@ const AdminCustomers = () => {
                   top: '50%',
                   transform: 'translateY(-50%)',
                   color: '#616f89',
+                  pointerEvents: 'none',
                 }}
               />
               <input
@@ -193,45 +179,12 @@ const AdminCustomers = () => {
                 }}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = '#135bec';
-                  e.currentTarget.style.outline = '2px solid #135bec';
-                  e.currentTarget.style.outlineOffset = '0';
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = '#e2e8f0';
-                  e.currentTarget.style.outline = 'none';
                 }}
               />
             </div>
-            <button
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 16px',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif',
-                backgroundColor: '#ffffff',
-                color: '#616f89',
-                transition: 'all 0.2s ease',
-                minWidth: isTablet ? 'auto' : '100px',
-                justifyContent: isTablet ? 'center' : 'flex-start',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#f6f6f8';
-                e.currentTarget.style.borderColor = '#135bec';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#ffffff';
-                e.currentTarget.style.borderColor = '#e2e8f0';
-              }}
-            >
-              <Filter size={18} />
-              {!isTablet && <span>Filter</span>}
-            </button>
             <button
               style={{
                 display: 'flex',
@@ -247,8 +200,7 @@ const AdminCustomers = () => {
                 cursor: 'pointer',
                 fontFamily: 'Inter, sans-serif',
                 transition: 'background-color 0.2s ease',
-                minWidth: isTablet ? '100%' : 'auto',
-                justifyContent: 'center',
+                whiteSpace: 'nowrap',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#0f4bc8';
@@ -257,7 +209,7 @@ const AdminCustomers = () => {
                 e.currentTarget.style.backgroundColor = '#135bec';
               }}
             >
-              <UserPlus size={18} />
+              <Plus size={18} />
               {!isTablet && <span>Add Customer</span>}
             </button>
           </div>
@@ -283,7 +235,7 @@ const AdminCustomers = () => {
                 No customers found
               </p>
             ) : (
-              <div style={{ minWidth: isMobile ? '800px' : 'auto' }}>
+              <div style={{ overflowX: 'auto', minWidth: isMobile ? '700px' : 'auto' }}>
                 <table
                   style={{
                     width: '100%',
@@ -344,7 +296,6 @@ const AdminCustomers = () => {
                           fontSize: '14px',
                           fontWeight: 600,
                           color: '#111318',
-                          display: isMobile ? 'none' : 'table-cell',
                         }}
                       >
                         Last Order
@@ -367,18 +318,6 @@ const AdminCustomers = () => {
                           fontSize: '14px',
                           fontWeight: 600,
                           color: '#111318',
-                          display: isTablet ? 'none' : 'table-cell',
-                        }}
-                      >
-                        Orders
-                      </th>
-                      <th
-                        style={{
-                          padding: '0.8rem 1rem',
-                          textAlign: 'left',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          color: '#111318',
                         }}
                       >
                         Status
@@ -390,7 +329,6 @@ const AdminCustomers = () => {
                           fontSize: '14px',
                           fontWeight: 600,
                           color: '#111318',
-                          display: isMobile ? 'none' : 'table-cell',
                         }}
                       >
                         Actions
@@ -398,9 +336,9 @@ const AdminCustomers = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredCustomers.map((customer, index) => (
+                    {filteredCustomers.map((customer) => (
                       <tr
-                        key={customer._id || index}
+                        key={customer.id}
                         style={{
                           borderBottom: '1px solid #e2e8f0',
                         }}
@@ -437,21 +375,19 @@ const AdminCustomers = () => {
                               alignItems: 'center',
                               justifyContent: 'center',
                               color: '#ffffff',
-                              fontSize: '14px',
                               fontWeight: 600,
-                              flexShrink: 0,
+                              fontSize: '16px',
                             }}
                           >
-                            {getInitials(customer.fullName)}
+                            {customer.fullName?.charAt(0).toUpperCase() || 'C'}
                           </div>
                           <div>
-                            <div style={{ fontWeight: '500', marginBottom: '2px' }}>
-                              {customer.fullName}
-                            </div>
+                            <div style={{ fontWeight: '500' }}>{customer.fullName}</div>
                             <div
                               style={{
                                 fontSize: '12px',
                                 color: '#616f89',
+                                marginTop: '2px',
                               }}
                             >
                               {customer.phone}
@@ -466,14 +402,13 @@ const AdminCustomers = () => {
                             display: isMobile ? 'none' : 'table-cell',
                           }}
                         >
-                          {customer.email || '-'}
+                          {customer.email}
                         </td>
                         <td
                           style={{
                             padding: '0.8rem 1rem',
                             fontSize: '14px',
                             color: '#616f89',
-                            display: isMobile ? 'none' : 'table-cell',
                           }}
                         >
                           {new Date(customer.lastOrder).toLocaleDateString()}
@@ -491,16 +426,6 @@ const AdminCustomers = () => {
                         <td
                           style={{
                             padding: '0.8rem 1rem',
-                            fontSize: '14px',
-                            color: '#616f89',
-                            display: isTablet ? 'none' : 'table-cell',
-                          }}
-                        >
-                          {customer.totalOrders}
-                        </td>
-                        <td
-                          style={{
-                            padding: '0.8rem 1rem',
                           }}
                         >
                           <span
@@ -510,43 +435,31 @@ const AdminCustomers = () => {
                               borderRadius: '9999px',
                               fontSize: '12px',
                               fontWeight: 500,
-                              backgroundColor: customer.status === 'active' 
-                                ? 'rgba(16, 185, 129, 0.1)' 
-                                : 'rgba(239, 68, 68, 0.1)',
-                              color: customer.status === 'active' 
-                                ? '#047857' 
-                                : '#dc2626',
+                              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                              color: '#047857',
                             }}
                           >
-                            {customer.status === 'active' ? 'Active' : 'Inactive'}
+                            {customer.status}
                           </span>
                         </td>
                         <td
                           style={{
                             padding: '0.8rem 1rem',
-                            display: isMobile ? 'none' : 'table-cell',
+                            display: 'flex',
+                            gap: '8px',
                           }}
                         >
                           <button
                             style={{
                               padding: '6px 12px',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '6px',
                               fontSize: '12px',
                               fontWeight: 500,
-                              color: '#135bec',
-                              backgroundColor: 'transparent',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
                               cursor: 'pointer',
                               fontFamily: 'Inter, sans-serif',
-                              transition: 'all 0.2s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#f6f6f8';
-                              e.currentTarget.style.borderColor = '#135bec';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                              e.currentTarget.style.borderColor = '#e2e8f0';
+                              backgroundColor: '#ffffff',
+                              color: '#616f89',
                             }}
                           >
                             View
@@ -559,62 +472,6 @@ const AdminCustomers = () => {
               </div>
             )}
           </div>
-
-          {/* Pagination Info */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: '16px',
-              padding: '12px',
-              color: '#616f89',
-              fontSize: '14px',
-            }}
-          >
-            <span>
-              Showing 1 to {filteredCustomers.length} of {customers.length} customers
-            </span>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                style={{
-                  padding: '6px 12px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  backgroundColor: '#ffffff',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                }}
-              >
-                Previous
-              </button>
-              <button
-                style={{
-                  padding: '6px 12px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  backgroundColor: '#135bec',
-                  color: '#ffffff',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                }}
-              >
-                1
-              </button>
-              <button
-                style={{
-                  padding: '6px 12px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  backgroundColor: '#ffffff',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                }}
-              >
-                Next
-              </button>
-            </div>
-          </div>
         </main>
       </div>
     </div>
@@ -622,3 +479,4 @@ const AdminCustomers = () => {
 };
 
 export default AdminCustomers;
+

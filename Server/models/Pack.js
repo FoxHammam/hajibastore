@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const productSchema = new mongoose.Schema({
+const packSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
@@ -21,12 +21,12 @@ const productSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    required: true,
+    default: 'Bundle',
     trim: true
   },
-  size: {
+  itemsIncluded: {
     type: [String],
-    default: []
+    required: true
   },
   bestSeller: {
     type: Boolean,
@@ -43,7 +43,7 @@ const productSchema = new mongoose.Schema({
   productType: {
     type: String,
     enum: ['product', 'pack'],
-    default: 'product'
+    default: 'pack'
   },
   multipleImages: {
     type: [String],
@@ -55,14 +55,10 @@ const productSchema = new mongoose.Schema({
       description: String
     }],
     default: []
-  },
-  itemsIncluded: {
-    type: [String],
-    default: []
   }
 }, {
   timestamps: true
 });
 
-module.exports = mongoose.model('Product', productSchema);
+module.exports = mongoose.model('Pack', packSchema);
 

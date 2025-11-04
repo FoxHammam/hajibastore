@@ -92,25 +92,38 @@ const AdminProducts = () => {
       const token = getAuthToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+      // Log what we're sending
+      console.log('Saving product data:', {
+        name: productData.name,
+        productType: productData.productType,
+        multipleImages: productData.multipleImages?.length || 0,
+        contentSections: productData.contentSections?.length || 0,
+        fullData: productData
+      });
+
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+      const apiUrl = apiBaseUrl.endsWith('/api') ? apiBaseUrl : `${apiBaseUrl}/api`;
+      
+      let response;
       if (editingProduct) {
         // Update existing product
-            const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-            const apiUrl = apiBaseUrl.endsWith('/api') ? apiBaseUrl : `${apiBaseUrl}/api`;
-            await axios.put(`${apiUrl}/products/${editingProduct._id}`, productData, { headers });
+        response = await axios.put(`${apiUrl}/products/${editingProduct._id}`, productData, { headers });
         toast.success('Product updated successfully!');
       } else {
         // Create new product
-            const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-            const apiUrl = apiBaseUrl.endsWith('/api') ? apiBaseUrl : `${apiBaseUrl}/api`;
-            await axios.post(`${apiUrl}/products`, productData, { headers });
+        response = await axios.post(`${apiUrl}/products`, productData, { headers });
         toast.success('Product created successfully!');
       }
+
+      // Log the response
+      console.log('Product saved, response:', response.data);
 
       setIsModalOpen(false);
       setEditingProduct(null);
       fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
+      console.error('Error response:', error.response?.data);
       toast.error(error.response?.data?.message || 'Failed to save product. Please try again.');
     }
   };
@@ -474,7 +487,8 @@ const AdminProducts = () => {
                               borderRadius: '8px',
                             }}
                             onError={(e) => {
-                              e.target.src = 'https://via.placeholder.com/50x50?text=No+Image';
+                              // Use a simple SVG placeholder instead
+                              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjUwIiBoZWlnaHQ9IjUwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNSAxNUMxOS40NzcgMTUgMTUgMTkuNDc3IDE1IDI1QzE1IDMwLjUyMyAxOS40NzcgMzUgMjUgMzVDMzAuNTIzIDM1IDM1IDMwLjUyMyAzNSAyNUMzNSAxOS40NzcgMzAuNTIzIDE1IDI1IDE1WiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNMjUgMjVDMjcgMjUgMjguNSAyMy41IDI4LjUgMjEuNUM28LjUgMTkuNSAyNyAxOCAyNSAxOEMyMyAxOCAyMS41IDE5LjUgMjEuNSAyMS41QzIxLjUgMjMuNSAyMyAyNSAyNSAyNVoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=';
                             }}
                           />
                           <span style={{ wordBreak: 'break-word' }}>{product.name}</span>
