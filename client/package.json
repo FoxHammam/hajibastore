@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.9.2",
     "@tailwindcss/vite": "^4.1.16",
     "axios": "^1.12.2",
+    "express": "^4.21.2",
     "list": "^2.0.19",
     "lucide-react": "^0.546.0",
     "react": "^19.1.1",
