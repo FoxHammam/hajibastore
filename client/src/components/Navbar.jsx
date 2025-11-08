@@ -26,10 +26,10 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-[#4ade80] rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">A</span>
+              <span className="text-white font-bold text-lg">H</span>
             </div>
             <span className="text-xl font-bold text-[#1f2937]">
-              Ayoub Store
+              Hajiba Store
             </span>
           </Link>
 

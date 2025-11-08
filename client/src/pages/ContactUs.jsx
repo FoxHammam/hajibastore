@@ -134,8 +134,8 @@ function ContactUs() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-[#1f2937] mb-1">Email Us</h3>
-                    <p className="text-[#4b5563]">support@ayoubstore.com</p>
-                    <p className="text-[#4b5563]">info@ayoubstore.com</p>
+                    <p className="text-[#4b5563]">support@hajibastore.com</p>
+                    <p className="text-[#4b5563]">info@hajibastore.com</p>
                   </div>
                 </div>
 
